@@ -1,0 +1,6 @@
+{
+  "name": "BiciTaller",
+  "description": "Digitalización y gestión integral de reparaciones, órdenes y presupuestos para talleres de bicicletas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
