@@ -23,7 +23,9 @@ import java.util.Locale
 
 object DocumentGenerator {
 
-    private val currencyFormat = NumberFormat.getCurrencyInstance(Locale("es", "CO")).apply {
+    private val currencyFormat = NumberFormat.getCurrencyInstance(
+        Locale.Builder().setLanguage("es").setRegion("CO").build()
+    ).apply {
         maximumFractionDigits = 0
     }
 
