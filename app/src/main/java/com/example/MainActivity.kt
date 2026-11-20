@@ -1,18 +1,25 @@
 package com.example
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,19 +32,33 @@ import com.example.ui.screens.HistorialBicicletaScreen
 import com.example.ui.screens.NuevaRecepcionScreen
 import com.example.ui.theme.BiciTallerTheme
 import com.example.ui.viewmodel.BiciTallerViewModel
+import com.example.util.InAppUpdateHelper
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: BiciTallerViewModel by viewModels()
+    private lateinit var inAppUpdateHelper: InAppUpdateHelper
+    private val updateDownloadedEvent = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            enableEdgeToEdge()
+        }
+
+        inAppUpdateHelper = InAppUpdateHelper(this) {
+            updateDownloadedEvent.tryEmit(Unit)
+        }
+        inAppUpdateHelper.checkForUpdate()
+
         setContent {
             BiciTallerTheme {
                 val navController = rememberNavController()
                 val snackbarHostState = remember { SnackbarHostState() }
+                val updateDownloadedMsg = stringResource(R.string.update_downloaded_message)
+                val updateRestartAction = stringResource(R.string.update_restart_action)
 
                 LaunchedEffect(Unit) {
                     viewModel.snackbarEvent.collectLatest { message ->
@@ -45,14 +66,24 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(
-                    snackbarHost = { SnackbarHost(snackbarHostState) },
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
+                LaunchedEffect(Unit) {
+                    updateDownloadedEvent.collectLatest {
+                        val result = snackbarHostState.showSnackbar(
+                            message = updateDownloadedMsg,
+                            actionLabel = updateRestartAction,
+                            duration = SnackbarDuration.Indefinite
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            inAppUpdateHelper.completeUpdate()
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.fillMaxSize()) {
                     NavHost(
                         navController = navController,
                         startDestination = "dashboard",
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         composable("dashboard") {
                             DashboardScreen(
@@ -122,8 +153,26 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+
+                    SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .windowInsetsPadding(WindowInsets.safeDrawing)
+                    )
                 }
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        inAppUpdateHelper.onResume()
+    }
+
+    override fun onDestroy() {
+        inAppUpdateHelper.dispose()
+        super.onDestroy()
+    }
 }
+

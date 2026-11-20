@@ -8,11 +8,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -91,9 +99,13 @@ fun DocumentoTicketScreen(
         }
     }
 
+    val safeSystemInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+
     Scaffold(
+        contentWindowInsets = safeSystemInsets,
         topBar = {
             TopAppBar(
+                windowInsets = safeSystemInsets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
                 title = {
                     Text(
                         text = if (esPresupuesto) "Presupuesto #$trabajoId" else "Ticket de Entrega #$trabajoId",
@@ -116,7 +128,12 @@ fun DocumentoTicketScreen(
         val currentCliente = cliente
 
         if (currentTrabajo == null || currentBici == null || currentCliente == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
                 Text("Cargando documento...")
             }
         } else {
@@ -148,8 +165,10 @@ fun DocumentoTicketScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.background)
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
+                    .imePadding()
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

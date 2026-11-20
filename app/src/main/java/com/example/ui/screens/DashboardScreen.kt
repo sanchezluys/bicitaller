@@ -8,11 +8,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -51,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,9 +92,14 @@ fun DashboardScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val filtroEstado by viewModel.filtroEstado.collectAsStateWithLifecycle()
 
+    val layoutDirection = LocalLayoutDirection.current
+    val safeSystemInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+
     Scaffold(
+        contentWindowInsets = safeSystemInsets,
         topBar = {
             TopAppBar(
+                windowInsets = safeSystemInsets.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -149,9 +165,15 @@ fun DashboardScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(16.dp),
+                .background(MaterialTheme.colorScheme.background)
+                .consumeWindowInsets(paddingValues)
+                .imePadding(),
+            contentPadding = PaddingValues(
+                start = 16.dp + paddingValues.calculateStartPadding(layoutDirection),
+                top = 16.dp + paddingValues.calculateTopPadding(),
+                end = 16.dp + paddingValues.calculateEndPadding(layoutDirection),
+                bottom = 16.dp + paddingValues.calculateBottomPadding()
+            ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Financial KPI Cards Row

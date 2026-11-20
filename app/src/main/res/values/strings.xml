@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">BiciTaller</string>
+    <string name="update_downloaded_message">Nueva actualización lista para instalar.</string>
+    <string name="update_restart_action">Reiniciar</string>
 </resources>
